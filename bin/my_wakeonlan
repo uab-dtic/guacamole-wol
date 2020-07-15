@@ -1,0 +1,51 @@
+#!/bin/bash 
+#-xv
+
+QUERY=$1
+
+LOCAL_DIR=$(dirname $0)
+
+DHCP_FILE=/etc/dhcp/dhcpd.conf
+DHCP_CSV=/etc/dhcp/dhcpd.csv
+
+update_dhcp_csv ()
+{
+        cat $DHCP_FILE | $LOCAL_DIR/export-dhcpd-reservations.pl > $DHCP_CSV
+}
+
+
+if [ $# -eq 0 ]
+then
+        echo "Forma de uso: $0 hostname "
+        exit 1
+fi
+
+
+if [ ! -f $DHCP_CSV ]
+then
+        update_dhcp_csv
+fi
+
+if [ $DHCP_FILE -nt $DHCP_CSV ]
+then
+        update_dhcp_csv
+fi
+
+DEVICES=$( ip link list | awk '  BEGIN{ FS=":"} /^[2-9]:/ {print $2}' )
+
+# get data 
+echo "Get data for pattern: $QUERY"
+echo "--"
+for LINE in $(grep -i "$QUERY" $DHCP_CSV)
+do
+        DHCP_HOST=$(echo $LINE | cut -d\; -f1 )
+        DHCP_ETHER=$(echo $LINE | cut -d\; -f2 )
+        DHCP_IP=$(echo $LINE | cut -d\; -f3 )
+        echo -n "wakeonlan: $DHCP_HOST: $DHCP_IP - $DHCP_ETHER "
+
+        for d in $DEVICES
+        do
+                /usr/sbin/etherwake -i $d $DHCP_ETHER ; echo -n "."
+        done
+        echo " -"
+done
