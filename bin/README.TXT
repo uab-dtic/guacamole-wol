@@ -1,7 +1,11 @@
 La clave publica generada
 
-# ssh-keygen -b 4096 -C "Comandos Remotos Sobre Aulas"
+# ssh-keygen -b 4096 -C "Comandos Remotos Sobre Aulas" -f comandosAulas
 
-Añadir al authorized_keys debe tener el siguiente prefijo para que funcione
+Añadir al principio de la clave publica el nombre del comando que podrá ejecutar
 
-command="/usr/local/sbin/comandosAulas.sh" ssh-rsa AAAAB.....
+ $ cat comandosAulas.pub
+ command="/usr/local/sbin/comandosAulas.sh" ssh-rsa AAAAB.....
+
+Añadir la clave publica al authorized_keys del usuario (root?) del servidor de dhcp
+
