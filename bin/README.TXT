@@ -1,4 +1,4 @@
-La clave publica generada
+La clave publica se genera con el comando
 
 # ssh-keygen -b 4096 -C "Comandos Remotos Sobre Aulas" -f comandosAulas
 
@@ -9,3 +9,7 @@ Añadir al principio de la clave publica el nombre del comando que podrá ejecut
 
 Añadir la clave publica al authorized_keys del usuario (root?) del servidor de dhcp
 
+Dependencias:
+- iproute2
+- etherwake
+- perl
