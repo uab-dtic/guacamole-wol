@@ -6,7 +6,7 @@ QUERY=$1
 LOCAL_DIR=$(dirname $0)
 
 DHCP_FILE=/etc/dhcp/dhcpd.conf
-DHCP_CSV=/etc/dhcp/dhcpd.csv
+DHCP_CSV=/tmp/dhcpd.csv
 
 update_dhcp_csv ()
 {
