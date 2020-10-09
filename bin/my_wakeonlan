@@ -10,7 +10,7 @@ DHCP_CSV=/tmp/dhcpd.csv
 
 update_dhcp_csv ()
 {
-        cat $DHCP_FILE | $LOCAL_DIR/export-dhcpd-reservations.pl > $DHCP_CSV
+        $LOCAL_DIR/export-dhcpd-reservations.py -i $DHCP_FILE -o $DHCP_CSV
 }
 
 
@@ -19,7 +19,6 @@ then
         echo "Forma de uso: $0 hostname "
         exit 1
 fi
-
 
 if [ ! -f $DHCP_CSV ]
 then
