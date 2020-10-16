@@ -49,7 +49,8 @@ class sshCommand:
         print ( "Executing {}".format( command ) )
         stdin , stdout, stderr = self.connection.exec_command( command )
         print( stdout.read() )
-        print( "Errors")
+        print( "SSH Errors:")
         print( stderr.read() )
+        print( "    End SSH Errors." )
         self.connection.close()
 
