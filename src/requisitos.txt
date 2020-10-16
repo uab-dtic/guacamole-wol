@@ -1,3 +1,2 @@
 paramiko
 mysql-connector-python
-wakeonlan
