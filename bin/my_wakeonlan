@@ -30,7 +30,7 @@ then
         update_dhcp_csv
 fi
 
-DEVICES=$( ip link list | awk '  BEGIN{ FS=":"} /^[2-9]:/ {print $2}' )
+DEVICES=$( ip -4 address list | awk '  BEGIN{ FS=":"} /^[2-9]:/ {print $2}' )
 
 # get data 
 echo "Get data for pattern: $QUERY"
