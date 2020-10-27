@@ -37,7 +37,7 @@ fi
 DEVICES=$( ip -4 address list | awk '  BEGIN{ FS=":"} /^[2-9]:/ {print $2}' )
 
 # get data 
-echo "Get data for pattern: $QUERY"
+echo "Searching data for pattern: $QUERY"
 echo "--"
 
 # Busco todos los elementos que cumplan estrictamente con la query + el separador";"
@@ -46,7 +46,7 @@ do
         DHCP_HOST=$(echo $LINE | cut -d\; -f1 )
         DHCP_ETHER=$(echo $LINE | cut -d\; -f2 )
         DHCP_IP=$(echo $LINE | cut -d\; -f3 )
-        echo -n "wakeonlan: $DHCP_HOST: $DHCP_IP - $DHCP_ETHER "
+        echo -n "Found wakeonlan: $DHCP_HOST: $DHCP_IP - $DHCP_ETHER "
 
         for d in $DEVICES
         do
