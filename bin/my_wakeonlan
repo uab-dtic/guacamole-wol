@@ -17,6 +17,10 @@ update_dhcp_csv ()
 if [ $# -eq 0 ]
 then
         echo "Forma de uso: $0 hostname "
+	echo "hostname debe ser EXACTAMENTE: "
+	echo "  El nombre de host definido en el fichero de dhcp"
+	echo "  La ip de la maquina en cuestion"
+	echo "  El fqdn dado de alta en el DNS"
         exit 1
 fi
 
@@ -35,7 +39,9 @@ DEVICES=$( ip -4 address list | awk '  BEGIN{ FS=":"} /^[2-9]:/ {print $2}' )
 # get data 
 echo "Get data for pattern: $QUERY"
 echo "--"
-for LINE in $(grep -i "$QUERY" $DHCP_CSV)
+
+# Busco todos los elementos que cumplan estrictamente con la query + el separador";"
+for LINE in $(grep -i "$QUERY;" $DHCP_CSV)
 do
         DHCP_HOST=$(echo $LINE | cut -d\; -f1 )
         DHCP_ETHER=$(echo $LINE | cut -d\; -f2 )
