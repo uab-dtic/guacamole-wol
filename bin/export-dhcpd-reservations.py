@@ -2,8 +2,6 @@
 
 import re, sys, getopt, socket
 
-name="dhcpd.sbd.conf"
-
 #
 #  Mensajes de ayuda
 #
