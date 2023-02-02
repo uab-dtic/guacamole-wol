@@ -19,9 +19,9 @@ WORKDIR /app
 COPY src/. .
 
 # Creamos entorno virtual e instalamos dependencias
-RUN pip install --upgrade pip   && \
-    python -m venv env  && \
+RUN python -m venv env  && \
     . env/bin/activate  && \
+    pip install --upgrade pip   && \
     pip install --no-cache-dir -r requisitos.txt
 
 # Cambiamos a usuario NO PRIVILEGIADO
