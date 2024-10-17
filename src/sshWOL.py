@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
+import logging
+
 import  paramiko
+
+log = logging.getLogger( __name__ )
 
 class sshCommand:
     connection=0
@@ -37,20 +41,19 @@ class sshCommand:
         key = paramiko.RSAKey.from_private_key_file( self.keyFileName, self.keyPassPhrase )
         self.connection=paramiko.SSHClient()
         self.connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        print ( "connecting to {}@{}".format(self.userName, self.hostName) )
+        log.debug ( "connecting to {}@{}".format(self.userName, self.hostName) )
 
         self.connection.connect( 
                 hostname        = self.hostName, 
                 username        = self.userName, 
                 pkey            = key 
                 )
-        print ( "connected" )
+        log.debug ( "connected" )
 
-        print ( "Executing {}".format( command ) )
+        log.debug ( "Executing {}".format( command ) )
         stdin , stdout, stderr = self.connection.exec_command( command )
-        print( stdout.read() )
-        print( "SSH Errors:")
-        print( stderr.read() )
-        print( "    End SSH Errors." )
+        log.info( "SSH stdout: '{}'".format( stdout.read() ))
+        log.debug( "SSH stdErr: '{}'".format (stderr.read() ))
+        
         self.connection.close()
 
