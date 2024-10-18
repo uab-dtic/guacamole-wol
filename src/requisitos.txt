@@ -1,2 +1,6 @@
 paramiko
-mysql-connector-python
+
+sqlalchemy 
+psycopg2-binary
+mysql-connector-python 
+pymysql
