@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'main'
+    tags:
+      - '*'
 
 jobs:
   docker:
@@ -12,6 +14,23 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
+      - 
+        name: Branch name
+        id: branch_name
+        run: |
+          echo "SOURCE_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          echo "SOURCE_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          echo "SOURCE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+      - 
+        name: Build base image
+        run: |
+          echo $SOURCE_NAME
+          echo $SOURCE_BRANCH
+          echo $SOURCE_TAG
+        env:
+          SOURCE_NAME: ${{ env.SOURCE_NAME }}
+          SOURCE_BRANCH: ${{ env.SOURCE_BRANCH }}
+          SOURCE_TAG: ${{ env.SOURCE_TAG }}
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -30,4 +49,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/guacamole-wol:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/guacamole-wol:${{ env.SOURCE_TAG }}
