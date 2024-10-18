@@ -28,16 +28,16 @@ command="/usr/local/bin/comandos_aulas.sh" ssh-rsa AAAAB3Nz.....VyQ== Comandos R
 - WOL_KEY       Ruta de la ssh private key, dentro del contenedor (Ver el Volumen)
 - WOL_KEY_PASS  Password para poder usar la ssh private key
 - DB_TYPE       Tipo de servidor de bbdd (mysql, postgres, mariadb, etc.)
-- DB_HOSTNAME    Servidor de bbdd
-- DB_DATABASE    Nombre de la bbdd
-- DB_USER        Usuario de acceso a la bbdd
-- DB_PASSWORD    Password del usuario de bbdd
+- DB_HOSTNAME   Servidor de bbdd
+- DB_PORT       Puerto de la bbdd
+- DB_DATABASE   Nombre de la bbdd
+- DB_USER       Usuario de acceso a la bbdd
+- DB_PASSWORD   Password del usuario de bbdd
 
 Respecto a la ssh private key es necesario :
 
 - Montar un volumen con el fichero de la ssh private key y que la variable *WOL_KEY* apunte correctamente al fichero.
 - El fichero original ha de pertenecer al UID=1000 GID=1000 y tener los permisos 0600
-
 
 ## NOTAS
 
