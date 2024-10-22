@@ -2,35 +2,37 @@ name: ContinuousIntegration
 
 on:
   push:
-    branches:
-      - 'main'
     tags:
-      - '*'
+      - 'v*.*'
 
 jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+      - name: Branch a usar como variable de entorno
+        run: echo "BRANCH=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: set NOW
+        run: |
+              cat $GITHUB_ENV
+              echo "NOW=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
+              cat $GITHUB_ENV
+
+      - name: set REPO_NAME
+        run: |
+              cat $GITHUB_ENV
+              echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
+              cat $GITHUB_ENV
+
+      - name: set TAG_NAME
+        run: |
+              cat $GITHUB_ENV
+              echo "TAG_NAME=$GITHUB_REF_NAME" >> $GITHUB_ENV
+              cat $GITHUB_ENV
       -
         name: Checkout
         uses: actions/checkout@v3
-      - 
-        name: Branch name
-        id: branch_name
-        run: |
-          echo "SOURCE_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          echo "SOURCE_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
-          echo "SOURCE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-      - 
-        name: Build base image
-        run: |
-          echo $SOURCE_NAME
-          echo $SOURCE_BRANCH
-          echo $SOURCE_TAG
-        env:
-          SOURCE_NAME: ${{ env.SOURCE_NAME }}
-          SOURCE_BRANCH: ${{ env.SOURCE_BRANCH }}
-          SOURCE_TAG: ${{ env.SOURCE_TAG }}
+        
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -49,4 +51,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/guacamole-wol:${{ env.SOURCE_TAG }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.REPO_NAME }}:${{ env.NOW }}, ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.REPO_NAME }}:${{ env.TAG_NAME }}, ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.REPO_NAME }}:latest
