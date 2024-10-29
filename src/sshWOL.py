@@ -65,7 +65,7 @@ class sshCommand:
 
             hostFound = re.search( "Found wakeonlan:", resultado, flags=re.IGNORECASE )
             if( not hostFound ):
-                raise Exception( "host not found: '{}'".format( command ) )
+                raise NameError( "host not found: '{}'".format( command ) )
             #
         finally:
             self.connection.close()

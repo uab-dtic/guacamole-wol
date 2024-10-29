@@ -20,7 +20,6 @@ from prometheus_client import start_http_server, Summary, Counter, Gauge
 
 CFG={}
 
-
 # Función para crear un motor de base de datos
 def create_db_engine(db_type, user, password, host, port, db_name):
     if db_type == 'postgres':
@@ -45,6 +44,7 @@ def create_db_engine(db_type, user, password, host, port, db_name):
 
 def main():
     global CFG
+    global last_wol_request_failure
 
     tiempoEspera = 15   # >= Tiempo de espera de la reconexion de guacamole
 
@@ -80,7 +80,6 @@ def main():
     while ( True ):
 
         with execution_time.time():     # Medir el tiempo de ejecucion de cada iteracion
-
             # reset hostDicytionary every day
             newDay=time.localtime().tm_mday
             if newDay != oldDay :
@@ -88,7 +87,6 @@ def main():
                 hostd.clear()
                 oldDay=newDay
             #
-
             try :
                 # Iniciamos sesion para cada iteracion
                 session = Session()
@@ -122,12 +120,17 @@ def main():
                             log.info( "Sending SSH WOL: 'WOL {}'".format(host))
                             try :
                                 sshCon.launchCommand( "WOL {}".format(host) )
+                            except NameError as e:
+                                ssh_connections_success.inc()
+                                log.critical( "Host '{}' not found on wol server".format(host))
+                                wol_request_failures.inc()
+                                last_wol_request_failure = time.time()
+
                             except Exception as e:
                                 log.critical( "Error al realizar la conexion SSH : '{}'".format(e))
                                 ssh_connections_failure.inc()
                             else:
                                 ssh_connections_success.inc()
-                                ssh_connections_failure.set(0)  # Reseteamos el contador de errores al hacer una conexion valida
                             #
                         else:
                             log.critical ("MaxWOL Supered on host {}".format(host))
@@ -159,6 +162,14 @@ def main():
 
         # Registrar el tiempo total de ejecución
         total_execution_time.observe(time.time() - start_time)
+
+        # si hay fallos de wol_request_failure  y 
+        # el ultimo fallo en la peticion es de hace mas de 300" 
+        # lo reinicializamos
+        if( (list(wol_request_failures.collect())[0].samples[0].value >0) and (time.time() - last_wol_request_failure  > 300) ):
+            log.debug("inicializamos wol_request_failure por timeout")
+            wol_request_failures.set(0)
+        #
 
     # End while
     log.critical ("endOfMainLoop")
@@ -203,6 +214,9 @@ if __name__ == "__main__" :
 
     execution_time = Summary('execution_time_seconds', 'Tiempo de ejecución de cada iteración')
     wol_requests = Counter('wol_requests', 'Número de peticiones de Wake On Lan')
+
+    wol_request_failures = Gauge('wol_request_failures', 'Numero de peticiones de WoL con fallo')
+    last_wol_request_failure = time.time()
 
     total_execution_time = Summary('total_execution_time_seconds', 'Tiempo total de ejecución del proceso')
 
