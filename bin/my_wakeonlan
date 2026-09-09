@@ -1,18 +1,81 @@
 #!/bin/bash 
 #-xv
 
+
+# REQUISITOS
+# ----------
+
+# etherwake
+#
+# jq , json5, kea-dhcp4.conf
+# dhcpd.conf
+
 QUERY=$1
+
 
 LOCAL_DIR=$(dirname $0)
 
+# DHCP_SERVER={DHCPD|KEA_JSON}
+DHCP_SERVER=UNDEFINED
+
+# KEA_JSON CONFIG
+# ==========
+# paquete jq
+JQ=$( which jq )
+# paquete node-json5
+JSON5=$( which json5 )
+
+KEA_FILE=/etc/kea/kea-dhcp4.conf
+
+if [ ${DHCP_SERVER} = "KEA_JSON" ]
+then
+        [ -z "${JQ}" ] && echo "Error: jq not found" && exit 1
+        [ -z "${JSON5}" ] && echo "Error: json5 not found" && exit 1
+
+        [ ! -f ${KEA_FILE} ] && echo "Error: KEA_FILE not found" && exit 1      
+fi
+
+
+# DHCP CONFIG
+# ===========
+
 DHCP_FILE=/etc/dhcp/dhcpd.conf
 DHCP_CSV=/tmp/dhcpd.csv
+
+if [ ${DHCP_SERVER} = "DHCPD" ]
+then
+        [ ! -f "${DHCP_FILE}" ] && echo "Error: DHCP_FILE not found" && exit 1
+fi
+
+
+# GLOGBAL CONFIG
+# ==============
+
+# paquete etherwake
+ETHERWAKE=$( which etherwake )
+[ -z "${ETHERWAKE}" ] && echo "Error: ETHERWAKE not found" && exit 1
+
+
+# ---------------
 
 update_dhcp_csv ()
 {
         $LOCAL_DIR/export-dhcpd-reservations.py -i $DHCP_FILE -o $DHCP_CSV
 }
 
+launch_wol ()
+{
+        local MAC=$1
+
+        DEVICES=$( ip -4 address list | awk '  BEGIN{ FS=":"} /^[2-9]:/ {print $2}' )
+
+        for d in $DEVICES
+        do
+                /usr/sbin/etherwake -i $d $MAC ; echo -n "."
+        done
+
+        echo " - WoL done."
+}
 
 if [ $# -eq 0 ]
 then
@@ -24,33 +87,71 @@ then
         exit 1
 fi
 
-if [ ! -f $DHCP_CSV ]
-then
-        update_dhcp_csv
-fi
 
-if [ $DHCP_FILE -nt $DHCP_CSV ]
-then
-        update_dhcp_csv
-fi
 
-DEVICES=$( ip -4 address list | awk '  BEGIN{ FS=":"} /^[2-9]:/ {print $2}' )
+case "$DHCP_SERVER" in
+    "DHCPD" )
+        if [ ! -f $DHCP_CSV ]
+        then
+                update_dhcp_csv
+        fi
 
-# get data 
-echo "Searching data for pattern: $QUERY"
-echo "--"
+        if [ $DHCP_FILE -nt $DHCP_CSV ]
+        then
+                update_dhcp_csv
+        fi
 
-# Busco todos los elementos que cumplan estrictamente con la query + el separador";"
-for LINE in $(grep -i "$QUERY;" $DHCP_CSV)
-do
-        DHCP_HOST=$(echo $LINE | cut -d\; -f1 )
-        DHCP_ETHER=$(echo $LINE | cut -d\; -f2 )
-        DHCP_IP=$(echo $LINE | cut -d\; -f3 )
-        echo -n "Found wakeonlan: $DHCP_HOST: $DHCP_IP - $DHCP_ETHER "
+        # get data 
+        echo "Searching data for pattern: $QUERY"
+        echo "--"
 
-        for d in $DEVICES
+        # Busco todos los elementos que cumplan estrictamente con la query + el separador";"
+        for LINE in $(grep -i "$QUERY;" $DHCP_CSV)
         do
-                /usr/sbin/etherwake -i $d $DHCP_ETHER ; echo -n "."
+                DHCP_HOST=$(echo $LINE | cut -d\; -f1 )
+                DHCP_ETHER=$(echo $LINE | cut -d\; -f2 )
+                DHCP_IP=$(echo $LINE | cut -d\; -f3 )
+                echo -n "Found wakeonlan: $DHCP_HOST: $DHCP_IP - $DHCP_ETHER "
+
+                launch_wol ${DHCP_ETHER}
         done
-        echo " -"
-done
+        ;;
+
+    "KEA_JSON" )
+        
+                DHCP_HOST=${QUERY}
+
+                DHCP_ETHER=$( 
+                        ${JSON5} ${KEA_FILE} | ${JQ} -r --arg value "$QUERY" '
+                                .Dhcp4.subnet4[].reservations[]
+                                | select(
+                                         (.hostname | split(".")[0]) == ($value | split(".")[0]) or
+                                        .["ip-address"] == $value
+                                )
+                                | .["hw-address"]
+                        ' 
+                )
+
+                DHCP_IP=$( 
+                        ${JSON5} ${KEA_FILE} | ${JQ} -r --arg value "$QUERY" '
+                                .Dhcp4.subnet4[].reservations[]
+                                | select(
+                                         (.hostname | split(".")[0]) == ($value | split(".")[0]) or
+                                        .["ip-address"] == $value
+                                )
+                                | .["ip-address"]
+                        ' 
+                )
+
+                if [ ! -z ${DHCP_ETHER} ]
+                then
+                        echo -n "Found wakeonlan: $DHCP_HOST: $DHCP_IP - $DHCP_ETHER "
+                        launch_wol ${DHCP_ETHER}
+                fi
+        ;;
+    * )
+        echo "Error: servidor '${DHCP_SERVER}' no implementado"
+        ;;
+esac
+
+
